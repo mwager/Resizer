@@ -101,6 +101,10 @@ class Resizer {
 		imagealphablending( $this->image_resized , false );
 		imagesavealpha( $this->image_resized , true );
 		
+		// convert transparency to white when converting from PNG to JPG.
+		// PNG to PNG should retain transparency as per normal.
+		imagefill( $this->image_resized , 0 , 0 , IMG_COLOR_TRANSPARENT );
+		
 		// Create the new image.
 		imagecopyresampled( $this->image_resized , $this->image , 0 , 0 , 0 , 0 , $optimal_width , $optimal_height , $this->width , $this->height );
 		
