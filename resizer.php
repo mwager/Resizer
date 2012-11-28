@@ -95,18 +95,22 @@ class Resizer {
 		
 		// Resample - create image canvas of x, y size.
 		$this->image_resized = imagecreatetruecolor( $optimal_width , $optimal_height );
+		$image_background = imagecreatetruecolor( $this->width , $this->height );
 		
 		// Retain transparency for PNG and GIF files.
-		imagecolortransparent( $this->image_resized , imagecolorallocatealpha( $this->image_resized , 255 , 255 , 255 , 127 ) );
-		imagealphablending( $this->image_resized , false );
-		imagesavealpha( $this->image_resized , true );
+		$white = imagecolorallocate( $image_background , 255, 255, 255 );
+		imagefilledrectangle( $image_background , 0 , 0 , $this->width , $this->height , $white );
+		imagecopy( $image_background , $this->image , 0 , 0 , 0 , 0 , $this->width , $this->height );
+		// imagecolortransparent( $this->image_resized , imagecolorallocatealpha( $this->image_resized , 255 , 255 , 255 , 127 ) );
+		// imagealphablending( $this->image_resized , false );
+		// imagesavealpha( $this->image_resized , true );
 		
 		// convert transparency to white when converting from PNG to JPG.
 		// PNG to PNG should retain transparency as per normal.
-		imagefill( $this->image_resized , 0 , 0 , IMG_COLOR_TRANSPARENT );
+		// imagefill( $this->image_resized , 0 , 0 , IMG_COLOR_TRANSPARENT );
 		
 		// Create the new image.
-		imagecopyresampled( $this->image_resized , $this->image , 0 , 0 , 0 , 0 , $optimal_width , $optimal_height , $this->width , $this->height );
+		imagecopyresampled( $this->image_resized , $image_background , 0 , 0 , 0 , 0 , $optimal_width , $optimal_height , $this->width , $this->height );
 		
 		// if option is 'crop' or 'fit', then crop too
 		if ( $option == 'crop' || $option == 'fit' ) {
