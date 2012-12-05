@@ -10,7 +10,7 @@
  * I only turned it into a Laravel bundle.
  *
  * @package Resizer
- * @version 1.0
+ * @version 1.1
  * @author Maikel D (original author Jarrod Oberto)
  * @link
  * @example
