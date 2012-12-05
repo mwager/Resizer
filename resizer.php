@@ -30,46 +30,50 @@
 class Resizer {
 	
 	/**
-	 * Store the image resource which we'll modify
+	 * Store the image resource which we'll modify.
 	 * @var Resource
 	 */
 	private $image;
 	
 	/**
-	 * Original width of the image we're modifying
+	 * Original width of the image we're modifying.
 	 * @var int
 	 */
 	private $width;
 	
 	/**
-	 * Original height of the image we're modifying
+	 * Original height of the image we're modifying.
 	 * @var int
 	 */
 	private $height;
 	
 	/**
-	 * Store the resource of the resized image
+	 * Store the resource of the resized image.
 	 * @var Resource
 	 */
 	private $image_resized;
 	
 	/**
-	 * Instantiates the Resizer and receives the path to an image we're working with
+	 * Instantiates the Resizer and receives the path to an image we're working with.
 	 * @param mixed $file The file array provided by Laravel's Input::file('field_name') or a path to a file
 	 */
 	function __construct( $file )
 	{
-		// Open up the file
+		// Open up the file.
 		$this->image = $this->open_image( $file );
 		
-		// Get width and height of our image
+		if ( !$this->image ) {
+			throw new Exception('File not recognised. Possibly because the path is wrong. Keep in mind, paths are relative to the main index.php file.');
+		}
+		
+		// Get width and height of our image.
 		$this->width  = imagesx( $this->image );
 		$this->height = imagesy( $this->image );
 	}
 	
 	/**
 	 * Static call, Laravel style.
-	 * Returns a new Resizer object, allowing for chainable calls
+	 * Returns a new Resizer object, allowing for chainable calls.
 	 * @param  mixed $file The file array provided by Laravel's Input::file('field_name') or a path to a file
 	 * @return Resizer
 	 */
@@ -79,7 +83,7 @@ class Resizer {
 	}
 	
 	/**
-	 * Resizes and/or crops an image
+	 * Resizes and/or crops an image.
 	 * @param  int    $new_width  The width of the image
 	 * @param  int    $new_height The height of the image
 	 * @param  string $option     Either exact, portrait, landscape, auto or crop.
@@ -98,8 +102,14 @@ class Resizer {
 		$image_background = imagecreatetruecolor( $this->width , $this->height );
 		
 		// Retain transparency for PNG and GIF files.
-		$white = imagecolorallocate( $image_background , 255, 255, 255 );
-		imagefilledrectangle( $image_background , 0 , 0 , $this->width , $this->height , $white );
+		$background_colour = imagecolorallocate(
+			$image_background,
+			Config::get('resizer::defaults.background_color.r'),
+			Config::get('resizer::defaults.background_color.g'),
+			Config::get('resizer::defaults.background_color.b')
+		);
+		
+		imagefilledrectangle( $image_background , 0 , 0 , $this->width , $this->height , $background_colour );
 		imagecopy( $image_background , $this->image , 0 , 0 , 0 , 0 , $this->width , $this->height );
 		// imagecolortransparent( $this->image_resized , imagecolorallocatealpha( $this->image_resized , 255 , 255 , 255 , 127 ) );
 		// imagealphablending( $this->image_resized , false );
@@ -112,12 +122,12 @@ class Resizer {
 		// Create the new image.
 		imagecopyresampled( $this->image_resized , $image_background , 0 , 0 , 0 , 0 , $optimal_width , $optimal_height , $this->width , $this->height );
 		
-		// if option is 'crop' or 'fit', then crop too
+		// if option is 'crop' or 'fit', then crop too.
 		if ( $option == 'crop' || $option == 'fit' ) {
 			$this->crop( $optimal_width , $optimal_height , $new_width , $new_height );
 		}
 		
-		// Return $this to allow calls to be chained
+		// Return $this to allow calls to be chained.
 		return $this;
 	}
 	
@@ -134,10 +144,10 @@ class Resizer {
 			$this->image_resized = $this->image;
 		}
 		
-		// Get extension of the output file
+		// Get extension of the output file.
 		$extension = strtolower( File::extension($save_path) );
 		
-		// Create and save an image based on it's extension
+		// Create and save an image based on it's extension.
 		switch( $extension )
 		{
 			case 'jpg':
@@ -154,10 +164,10 @@ class Resizer {
 				break;
 				
 			case 'png':
-				// Scale quality from 0-100 to 0-9
+				// Scale quality from 0-100 to 0-9.
 				$scale_quality = round( ($image_quality/100) * 9 );
 				
-				// Invert quality setting as 0 is best, not 9
+				// Invert quality setting as 0 is best, not 9.
 				$invert_scale_quality = 9 - $scale_quality;
 				
 				if ( imagetypes() & IMG_PNG ) {
@@ -170,7 +180,7 @@ class Resizer {
 				break;
 		}
 		
-		// Remove the resource for the resized image
+		// Remove the resource for the resized image.
 		imagedestroy( $this->image_resized );
 		
 		return true;
@@ -184,7 +194,7 @@ class Resizer {
 	private function open_image( $file )
 	{
 		
-		// If $file isn't an array, we'll turn it into one
+		// If $file isn't an array, we'll turn it into one.
 		if ( !is_array($file) ) {
 			$file = array(
 				'type'		=> File::mime( strtolower(File::extension($file)) ),
@@ -254,7 +264,7 @@ class Resizer {
 	}
 	
 	/**
-	 * Returns the width based on the image height
+	 * Returns the width based on the image height.
 	 * @param  int    $new_height The height of the image
 	 * @return int
 	 */
@@ -267,7 +277,7 @@ class Resizer {
 	}
 	
 	/**
-	 * Returns the height based on the image width
+	 * Returns the height based on the image width.
 	 * @param  int    $new_width The width of the image
 	 * @return int
 	 */
@@ -287,19 +297,19 @@ class Resizer {
 	 */
 	private function get_size_by_auto( $new_width , $new_height )
 	{
-		// Image to be resized is wider (landscape)
+		// Image to be resized is wider (landscape).
 		if ( $this->height < $this->width )
 		{
 			$optimal_width	= $new_width;
 			$optimal_height	= $this->get_size_by_fixed_width( $new_width );
 		}
-		// Image to be resized is taller (portrait)
+		// Image to be resized is taller (portrait).
 		else if ( $this->height > $this->width )
 		{
 			$optimal_width	= $this->get_size_by_fixed_height( $new_height );
 			$optimal_height	= $new_height;
 		}
-		// Image to be resizerd is a square
+		// Image to be resizerd is a square.
 		else
 		{
 			if ( $new_height < $new_width )
@@ -314,7 +324,7 @@ class Resizer {
 			}
 			else
 			{
-				// Sqaure being resized to a square
+				// Sqaure being resized to a square.
 				$optimal_width	= $new_width;
 				$optimal_height	= $new_height;
 			}
@@ -374,7 +384,7 @@ class Resizer {
 	}
 	
 	/**
-	 * Crops an image from its center
+	 * Crops an image from its center.
 	 * @param  int    $optimal_width  The width of the image
 	 * @param  int    $optimal_height The height of the image
 	 * @param  int    $new_width      The new width
@@ -383,9 +393,11 @@ class Resizer {
 	 */
 	private function crop( $optimal_width , $optimal_height , $new_width , $new_height )
 	{
-		// Find center - this will be used for the crop
-		$crop_start_x = ( $optimal_width  / 2 ) - ( $new_width  / 2 );
-		$crop_start_y = ( $optimal_height / 2 ) - ( $new_height / 2 );
+		$crop_points = $this->get_crop_points( $optimal_width , $optimal_height , $new_width , $new_height );
+		
+		// Find center - this will be used for the crop.
+		$crop_start_x = $crop_points['x'];
+		$crop_start_y = $crop_points['y'];
 		
 		$crop = $this->image_resized;
 		
@@ -396,7 +408,7 @@ class Resizer {
 		$dest_width		= min( $optimal_width, $new_width );
 		$dest_height	= min( $optimal_height, $new_height );
 		
-		// Now crop from center to exact requested size
+		// Now crop from center to exact requested size.
 		$this->image_resized = imagecreatetruecolor( $new_width , $new_height );
 		
 		imagealphablending( $crop , true );
@@ -410,6 +422,55 @@ class Resizer {
 		imagecopyresampled( $this->image_resized , $crop , $dest_offset_x , $dest_offset_y , $crop_start_x , $crop_start_y , $dest_width , $dest_height , $dest_width , $dest_height );
 		
 		return true;
+	}
+	
+	/**
+	 * Gets the crop points based on the configuration either set in the file
+	 * or overridden by user in their own config file, or on the fly.
+	 * @param  int    $optimal_width  The width of the image
+	 * @param  int    $optimal_height The height of the image
+	 * @param  int    $new_width      The new width
+	 * @param  int    $new_height     The new height
+	 * @return array                  Array containing the crop x and y points.
+	 */
+	private function get_crop_points( $optimal_width , $optimal_height , $new_width , $new_height ) {
+		$crop_points = array();
+		
+		// Where is our vertical starting crop point?
+		switch ( Config::get('resizer::defaults.crop_vertical_start_point') ) {
+			case 'top':
+				$crop_points['y'] = 0;
+				break;
+			case 'center':
+				$crop_points['y'] = ( $optimal_height / 2 ) - ( $new_height / 2 );
+				break;
+			case 'bottom':
+				$crop_points['y'] = $optimal_height - $new_height;
+				break;
+			
+			default:
+				throw new Exception('Unknown value for crop_vertical_start_point: '. Config::get('resizer::defaults.crop_vertical_start_point') .'. Please check config file in the Resizer bundle.');
+				break;
+		}
+		
+		// Where is our horizontal starting crop point?
+		switch ( Config::get('resizer::defaults.crop_horizontal_start_point') ) {
+			case 'left':
+				$crop_points['x'] = 0;
+				break;
+			case 'center':
+				$crop_points['x'] = ( $optimal_width / 2 ) - ( $new_width / 2 );
+				break;
+			case 'right':
+				$crop_points['x'] = $optimal_width - $new_width;
+				break;
+			
+			default:
+				throw new Exception('Unknown value for crop_horizontal_start_point: '. Config::get('resizer::defaults.crop_horizontal_start_point') .'. Please check config file in the Resizer bundle.');
+				break;
+		}
+		
+		return $crop_points;
 	}
 	
 }
