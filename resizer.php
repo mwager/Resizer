@@ -1,5 +1,21 @@
-<?php
+<?php namespace Resizer;
 	
+use Laravel\File;
+use Laravel\Log;
+use Laravel\Config;
+
+
+/**
+ * ResizerException
+ */
+class ResizerException extends \Exception {
+    public function __construct($message = "default", $code = 0, Exception $previous = null) {
+        parent::__construct($message, $code, $previous);
+        Log::write('ResizerException', $message);
+    }
+}
+
+
 /**
  * Provides a very simple way to resize an image.
  *
@@ -63,7 +79,7 @@ class Resizer {
 		$this->image = $this->open_image( $file );
 		
 		if ( !$this->image ) {
-			throw new Exception('File not recognised. Possibly because the path is wrong. Keep in mind, paths are relative to the main index.php file.');
+			throw new ResizerException('File not recognised. Possibly because the path is wrong. Keep in mind, paths are relative to the main index.php file.');
 		}
 		
 		// Get width and height of our image.
@@ -81,7 +97,25 @@ class Resizer {
 	{
 		return new Resizer( $file );
 	}
+
+	/**
+	 * Get the width of the loaded image
+	 * @return int
+	 */
+	public function get_width() 
+	{
+		return $this->width;
+	}
 	
+	/**
+	 * Get the height of the loaded image
+	 * @return int
+	 */
+	public function get_height() 
+	{
+		return $this->height;
+	}
+
 	/**
 	 * Resizes and/or crops an image.
 	 * @param  int    $new_width  The width of the image
@@ -255,6 +289,9 @@ class Resizer {
 				$optimal_width	= $option_array['optimal_width'];
 				$optimal_height	= $option_array['optimal_height'];
 				break;
+
+			default:
+				throw new ResizerException('Option not supported: ' . $option);
 		}
 		
 		return array(

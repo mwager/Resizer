@@ -55,6 +55,21 @@ Then you can start resizing your images by simply calling:
         }
     });
 
+
+## Unit Tests
+
+Laravel makes it easy to add unit tests to a bundle. Note that it is necessary to load Resizer automatically for
+running the bundle unit tests within a laravel installation. See `Installation` above.
+
+Running the tests via artisan:
+
+    $ php artisan test resizer
+
+Running the tests manually to generate code coverage: (`phpunit/PHP_CodeCoverage` has to be installed)
+
+    $ phpunit -c /full/path/to/laravel_installation/bundles/Resizer/tests/phpunit.xml --debug -v
+
+
 ## Credits
 
 The image resize class was originally written in a tutorial by Jarrod Oberto on [NetTuts+](http://net.tutsplus.com/tutorials/php/image-resizing-made-easy-with-php/). I only modified it to use Laravel's File class, updated the coding style, added comments throughout the class file and turned it into a Laravel bundle.
